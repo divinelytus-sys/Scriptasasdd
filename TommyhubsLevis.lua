@@ -5424,6 +5424,45 @@ task.spawn(function()
         end)
     end
 
+    local function aviso(txt)
+        print(txt)
+        pcall(function()
+            game:GetService("StarterGui"):SetCore("SendNotification", {
+                Title = "Gacha",
+                Text = string.sub(txt, 1, 200),
+                Duration = 8,
+            })
+        end)
+    end
+
+    local function ser(v, d)
+        d = d or 0
+        if typeof(v) ~= "table" then return typeof(v) .. ":" .. tostring(v) end
+        if d > 4 then return "{...}" end
+        local s = {}
+        for k, x in pairs(v) do s[#s + 1] = tostring(k) .. "=" .. ser(x, d + 1) end
+        return "{" .. table.concat(s, ", ") .. "}"
+    end
+
+    local function contarFrutas()
+        local n = 0
+        pcall(function()
+            local lp = game:GetService("Players").LocalPlayer
+            for _, c in ipairs({lp.Backpack, lp.Character}) do
+                if c then
+                    for _, t in ipairs(c:GetChildren()) do
+                        if t:IsA("Tool") and string.find(t.Name, "Fruit", 1, true) then
+                            n = n + 1
+                        end
+                    end
+                end
+            end
+        end)
+        return n
+    end
+
+    aviso("Loop del gacha iniciado. Faltan " .. math.max(0, Env.ZioleNextAt - os.time()) .. "s")
+
     while Env.ZioleLoopId == myId do
         task.wait(1)
         if _G.AutoRandomFruit and HRP and HD and HD.Health > 0
@@ -5432,17 +5471,32 @@ task.spawn(function()
             Env.ZioleNextAt = os.time() + COOLDOWN
             save()
 
-            local ok, _, extra = pcall(function()
+            local antes = contarFrutas()
+
+            local ok, result, extra = pcall(function()
                 return RS.Modules.Net["RF/GachaNetworkRF"]:InvokeServer({
                     Context = "Purchase",
                     BoxName = "ZiolesGacha"
                 })
             end)
 
-            if ok and type(extra) == "table" and extra.Cooldown and extra.Cooldown.TimeEnds then
-                Env.ZioleNextAt = extra.Cooldown.TimeEnds + 5
-                save()
-            end
+            pcall(function()
+                local cd = type(extra) == "table" and extra.Cooldown
+                if cd and cd.RequirementMet == false and cd.TimeEnds then
+                    local t = cd.TimeEnds + 5
+                    if t > os.time() then
+                        Env.ZioleNextAt = t
+                        save()
+                    end
+                end
+            end)
+
+            task.wait(20)
+
+            local reporte = ("ok=%s result=%s extra=%s frutas %d->%d"):format(
+                tostring(ok), ser(result), ser(extra), antes, contarFrutas())
+            aviso(reporte)
+            pcall(function() setclipboard(reporte) end)
 
             Env.ZioleBusy = false
         end
