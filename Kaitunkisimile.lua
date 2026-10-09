@@ -4923,12 +4923,146 @@ do
         end)
         return ok
     end
+    local function ApplyFPSBoostToExisting(obj)
+        if not _G.FPSBoost then
+            return
+        end
+        local ok = pcall(function()
+            local sliceStarted = os.clock()
+            for _, v in ipairs(obj:GetDescendants()) do
+                ApplyFPSBoostToNew(v)
+                if os.clock() - sliceStarted >= 0.0042 then
+                    task.wait()
+                    sliceStarted = os.clock()
+                end
+            end
+        end)
+        return ok
+    end
+    local FPSBoostFlags = {
+        -- Render / sombras / luces
+        FFlagDisablePostFx = "True",
+        FIntRenderShadowIntensity = "0",
+        FIntRenderMaxShadowAtlasUsageBeforeDownscale = "0",
+        FFlagRenderShadowSkipHugeCulling = "True",
+        DFIntCullFactorPixelThresholdShadowMapLowQuality = "2147483647",
+        DFIntCullFactorPixelThresholdShadowMapHighQuality = "2147483647",
+        FIntRenderGrassDetailStrands = "0",
+        FIntFRMMaxGrassDistance = "0",
+        FIntGrassMovementReducedMotionFactor = "0",
+        FIntSSAOMipLevels = "0",
+        FFlagDebugSSAOForce = "False",
+        FIntBloomFrmCutoff = "0",
+        FFlagRenderNoLowFrmBloom = "False",
+        FFlagVignetteEffectEnabled4 = "False",
+        FIntRenderLocalLightUpdatesMax = "1",
+        FIntRenderLocalLightUpdatesMin = "1",
+        FIntRenderLocalLightFadeInMs = "0",
+        FIntUnifiedLightingBlendZone = "0",
+        FFlagNewLightAttenuation = "True",
+        FFlagDebugForceFSMCPULightCulling = "True",
+        FFlagFastGPULightCulling3 = "True",
+        FFlagRenderLightGridEfficientTextureAtlasUpdate = "True",
+        FFlagShaderLightingRefactor = "False",
+        FFlagRenderSkipReadingShaderData = "False",
+        FIntDebugFRMOptionalMSAALevelOverride = "0",
+        DFIntDebugFRMQualityLevelOverride = "1",
+        FFlagFRMRefactor = "False",
+        FFlagRenderCBRefactor2 = "True",
+        FFlagRenderEnableGlobalInstancingD3D11 = "True",
+        FFlagDebugGraphicsPreferD3D11 = "True",
+        FFlagOcclusionCullingBetaFeature = "True",
+        DFFlagDebugUseOcclusionQueries = "True",
+        FFlagEnableCullableScene2OptimizeStep = "True",
+        FFlagRenderOptimizeDecalTransparencyInvalidation = "True",
+        FFlagCSGDecalOptimizeVB = "True",
+        FFlagRenderLegacyShadowsQualityRefactor = "True",
+        FFlagRenderFixGrassPrepass = "False",
+        FFlagFixParticleAttachmentCulling = "False",
+        FFlagFixParticleEmissionBias2 = "False",
+        FFlagFixOutdatedTimeScaleParticles = "False",
+        FFlagDebugDeterministicParticles = "False",
+        FFlagRenderDebugCheckThreading2 = "True",
+        FFlagDebugCheckRenderThreading = "True",
+        FFlagEnableRuntimeThreadVisQueries4 = "True",
+        FFlagEnableRuntimeThreadVisQueries = "True",
+        FFlagDebugSkyGray = "True",
+        DFFlagDebugRenderForceTechnologyVoxel = "True",
+
+        -- Texturas / mallas / LOD / terreno
+        DFFlagTextureQualityOverrideEnabled = "True",
+        DFIntTextureQualityOverride = "0",
+        DFIntPerformanceControlTextureQualityBestUtility = "-1",
+        DFIntCSGLevelOfDetailSwitchingDistance = "0",
+        DFIntCSGLevelOfDetailSwitchingDistanceL12 = "0",
+        DFIntCSGLevelOfDetailSwitchingDistanceL23 = "0",
+        DFIntCSGLevelOfDetailSwitchingDistanceL34 = "0",
+        DFIntAnimationLodFacsDistanceMin = "0",
+        DFIntAnimationLodFacsDistanceMax = "0",
+        DFIntAnimationLodFacsVisibilityDenominator = "0",
+        FIntVertexSmoothingGroupTolerance = "0",
+        FIntRenderMeshOptimizeVertexBuffer = "0",
+        DFFlagDebugSkipMeshVoxelizer = "True",
+        DFFlagDebugPauseVoxelizer = "True",
+        DFFlagVisBugFixUnloadReadyMesh = "True",
+        DFFlagVisBugFixPartUpdatedLock = "True",
+        FIntTerrainArraySliceSize = "0",
+        FIntSmoothTerrainPhysicsCacheSize = "0",
+
+        -- Scheduler / físicas / memoria
+        DFIntTaskSchedulerTargetFps = "240",
+        FFlagTaskSchedulerLimitTargetFpsTo2402 = "False",
+        FFlagGameBasicSettingsFramerateCap5 = "True",
+        DFFlagTaskSchedulerAvoidSleep = "True",
+        DFFlagDebugPerfMode = "True",
+        DFIntMaxFrameBufferSize = "4",
+        DFFlagOptimizeIsA = "True",
+        DFFlagOptimizeClusterCacheAlloc = "True",
+        DFFlagPhysicsMechanismCacheOptimizeAlloc = "True",
+        DFFlagSimOptimizeSetSize = "True",
+        DFFlagSimSolverOptimizeGeometricStiffness4 = "True",
+        FFlagNewOptimizeNoCollisionPrimitiveInMidphase651 = "True",
+        FFlagPreOptimizeNoCollisionPrimitive = "True",
+        FFlagMouseGetPartOptimization = "True",
+        FFlagLuauCodegen = "True",
+        DFFlagEnablePerfDataMainThread = "True",
+        DFFlagPerformanceControlEnableMemoryProbing3 = "True",
+        DFIntMemoryUtilityCurveBaseHundrethsPercent = "10000",
+        DFIntMemoryUtilityCurveTotalMemoryReserve = "0",
+        DFIntMemoryUtilityCurveNumSegments = "100",
+        FFlagMessageBusCallOptimization = "True",
+        FFlagLuaMenuPerfImprovements = "True",
+
+        -- Precarga de assets
+        DFFlagEnableTexturePreloading = "True",
+        DFFlagEnableMeshPreloading2 = "True",
+        DFFlagEnableSoundPreloading = "True",
+        DFIntAssetPreloading = "2147483647",
+        DFIntNumAssetsMaxToPreload = "2147483647",
+        DFIntPreloadAvatarAssets = "2147483647",
+        FFlagPreloadAllFonts = "True",
+        FFlagPreloadTextureItemsOption4 = "True",
+        FFlagAssetPreloadingIXP = "True",
+        DFFlagTeleportClientAssetPreloadingEnabled9 = "True",
+        DFFlagTeleportClientAssetPreloadingEnabledIXP = "True",
+        DFFlagTeleportClientAssetPreloadingEnabledIXP2 = "True",
+        DFFlagTeleportClientAssetPreloadingDoingExperiment = "True",
+        DFFlagTeleportClientAssetPreloadingDoingExperiment2 = "True",
+        DFIntTeleportClientAssetPreloadingHundredthsPercentage = "100000",
+        DFIntTeleportClientAssetPreloadingHundredthsPercentage2 = "100000",
+    }
     PerformanceAPI.ApplyFPSBoost = function()
         task.spawn(function()
+            if setfflag then
+                for name, value in pairs(FPSBoostFlags) do
+                    pcall(setfflag, name, value)
+                end
+            end
             pcall(function()
                 local lighting = game:GetService("Lighting")
                 local atmosphere = lighting:FindFirstChild("BaseAtmosphere")
                 if atmosphere then atmosphere:Destroy() end
+                lighting.GlobalShadows = false
             end)
             pcall(function() settings().Rendering.QualityLevel = "Level01" end)
             pcall(function()
@@ -4941,55 +5075,10 @@ do
                 end
             end)
             pcall(function()
-                local lighting = game:GetService("Lighting")
-                lighting.GlobalShadows = false
-                for _, item in ipairs(lighting:GetDescendants()) do
-                    if item:IsA("BlurEffect") then
-                        item.Enabled = false
-                    end
-                end
-            end)
-            pcall(function()
-                local sliceStarted = os.clock()
-                for _, item in ipairs(game:GetDescendants()) do
-                    if item:IsA("ParticleEmitter") or item:IsA("Trail") then
-                        item.Lifetime = NumberRange.new(0)
-                    elseif item:IsA("Decal") or item:IsA("Texture") then
-                        item.Transparency = 1
-                    elseif item:IsA("Fire") or item:IsA("SpotLight") or item:IsA("Smoke") then
-                        item.Enabled = false
-                    elseif item:IsA("Explosion") then
-                        item.BlastPressure, item.BlastRadius = 1, 1
-                    elseif item:IsA("BasePart") or item:IsA("UnionOperation") or item:IsA("CornerWedgePart") or item:IsA("TrussPart") then
-                        item.Reflectance = 0
-                    end
-                    if os.clock() - sliceStarted >= 0.0042 then task.wait(); sliceStarted = os.clock() end
-                end
-            end)
-            pcall(function()
-                local replicated = game:GetService("ReplicatedStorage")
-                local smooth = Enum.Material.SmoothPlastic
-                local sliceStarted = os.clock()
-                local folders = {}
-                local map = workspace:FindFirstChild("Map")
-                if map then folders[#folders + 1] = map end
-                local unloaded = replicated:FindFirstChild("Unloaded")
-                if unloaded then folders[#folders + 1] = unloaded end
-                for _, folder in ipairs(folders) do
-                    for _, item in ipairs(folder:GetDescendants()) do
-                        if item:IsA("BasePart") then
-                            item.Material = smooth
-                        elseif item:IsA("Texture") and not item:GetAttribute("Offset") then
-                            item:Destroy()
-                        end
-                        if os.clock() - sliceStarted >= 0.0042 then task.wait(); sliceStarted = os.clock() end
-                    end
-                end
-            end)
-            pcall(function()
                 local optimizer = LocalPlayer.PlayerScripts:FindFirstChild("OptimizerClientActor")
                 if optimizer and optimizer.SendMessage then optimizer:SendMessage("Optimize", true) end
             end)
+            pcall(ApplyFPSBoostToExisting, workspace)
             if FPSBoostHookDone then
                 return
             end
@@ -5312,15 +5401,34 @@ end)
 local FruitsBlackList = {}
 local LastRandomFruitAt = 0
 task.spawn(function()
+    local RS = game:GetService("ReplicatedStorage")
+    local last = 0
+
+    local function volverAlProfile()
+        local R = RS.Remotes
+        pcall(function()
+            R.Clock.DelayedRequestFunction:InvokeServer(workspace:GetServerTimeNow())
+        end)
+        for _ = 1, 2 do
+            pcall(function() R.GetPlayerProfileOpened:InvokeServer() end)
+            pcall(function() R.GetProfileBackgroundList:InvokeServer() end)
+        end
+    end
+
     while true do
         task.wait(0.5)
-        if _G.AutoRandomFruit and HRP and HD and HD.Health > 0 then
-            if os.clock() - LastRandomFruitAt >= 60 then
-                LastRandomFruitAt = os.clock()
-                pcall(function()
-                    CommF:InvokeServer("Check", "DLCBoxData")
-                    CommF:InvokeServer("Cousin", "DLCBoxData")
-                end)
+        if _G.AutoRandomFruit and os.clock() - last >= 60 then
+            last = os.clock()
+
+            local ok, result = pcall(function()
+                return RS.Modules.Net["RF/GachaNetworkRF"]:InvokeServer({
+                    Context = "Purchase",
+                    BoxName = "ZiolesGacha"
+                })
+            end)
+
+            if ok and result == true then
+                task.delay(20, volverAlProfile)
             end
         end
     end
