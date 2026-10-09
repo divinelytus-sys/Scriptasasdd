@@ -5402,7 +5402,21 @@ local FruitsBlackList = {}
 local LastRandomFruitAt = 0
 task.spawn(function()
     local RS = game:GetService("ReplicatedStorage")
-    local last = 0
+    local FILE = "ziole_gacha_next.txt"
+    local COOLDOWN = 2 * 60 * 60 + 60 -- 2h + 1 min de margen
+    local nextAt = 0
+
+    pcall(function()
+        if isfile and isfile(FILE) then
+            nextAt = tonumber(readfile(FILE)) or 0
+        end
+    end)
+
+    local function save()
+        pcall(function()
+            if writefile then writefile(FILE, tostring(nextAt)) end
+        end)
+    end
 
     local function volverAlProfile()
         local R = RS.Remotes
@@ -5416,11 +5430,12 @@ task.spawn(function()
     end
 
     while true do
-        task.wait(0.5)
-        if _G.AutoRandomFruit and os.clock() - last >= 60 then
-            last = os.clock()
+        task.wait(1)
+        if _G.AutoRandomFruit and os.time() >= nextAt then
+            nextAt = os.time() + COOLDOWN
+            save()
 
-            local ok, result = pcall(function()
+            local ok, result, extra = pcall(function()
                 return RS.Modules.Net["RF/GachaNetworkRF"]:InvokeServer({
                     Context = "Purchase",
                     BoxName = "ZiolesGacha"
@@ -5429,6 +5444,9 @@ task.spawn(function()
 
             if ok and result == true then
                 task.delay(20, volverAlProfile)
+            elseif ok and type(extra) == "table" and extra.Cooldown and extra.Cooldown.TimeEnds then
+                nextAt = extra.Cooldown.TimeEnds + 5
+                save()
             end
         end
     end
